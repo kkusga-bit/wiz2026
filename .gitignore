@@ -1,0 +1,14 @@
+infra/.terraform/
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/state-backup/
+*.tfstate
+*.tfstate.backup
+*.bak
+infra/terraform.tfvars
+k8s/secret.yaml
+notes/
+security/*bucket-policy.json
+k8s/iam_policy.json
+*.tfplan
+*.pem

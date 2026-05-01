@@ -1,0 +1,45 @@
+name: app
+on:
+  workflow_dispatch:
+  push:
+    paths: ["app/**", "k8s/**"]
+jobs:
+  build-scan-push-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build image
+        run: docker build -t tasky-lab-tasky-app:latest ./app
+      - name: Trivy container scan - exercise observe mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: tasky-lab-tasky-app:latest
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+      # production-gate mode로 보여줄 때는 exit-code: "1" 로 변경한다.
+      - name: Push image
+        run: |
+          docker tag tasky-lab-tasky-app:latest ${{ secrets.ECR_REPOSITORY_URL }}:latest
+          docker push ${{ secrets.ECR_REPOSITORY_URL }}:latest
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+      - name: Verify Kubernetes Secret pre-created
+        run: |
+          kubectl get namespace tasky-lab
+          kubectl get secret tasky-secret -n tasky-lab
+      - name: Deploy
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/serviceaccount.yaml
+          kubectl apply -f k8s/clusterrolebinding.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl rollout status deployment/tasky-app -n tasky-lab --timeout=240s

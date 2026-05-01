@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasky-app
+  namespace: tasky-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tasky-app
+  template:
+    metadata:
+      labels:
+        app: tasky-app
+    spec:
+      serviceAccountName: tasky-app-sa #의도된 보안리스크 클러스터 전역 관리자 권한이 있는 서비스 계정 사용
+      containers:
+      - name: tasky-app
+        image: 376129883698.dkr.ecr.us-west-2.amazonaws.com/tasky-lab-tasky-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: tasky-secret
+              key: MONGODB_URI
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tasky-secret
+              key: SECRET_KEY

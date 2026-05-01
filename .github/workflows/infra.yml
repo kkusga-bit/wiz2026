@@ -1,0 +1,24 @@
+name: infra
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["infra/**"]
+jobs:
+  terraform-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt/validate
+        run: |
+          cd infra
+          terraform fmt -check -recursive
+          terraform init
+          terraform validate
+          # 이 pipeline은 validate/scan only다. plan/apply는 민감 변수 주입 방식이 준비된 뒤 별도 gate로 운영한다.
+      - name: Checkov IaC scan - exercise observe mode
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infra
+          soft_fail: true
+      # production-gate mode로 보여줄 때는 soft_fail: false 로 변경한다.
