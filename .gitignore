@@ -1,3 +1,4 @@
+# Terraform local files and state
 infra/.terraform/
 infra/terraform.tfstate
 infra/terraform.tfstate.backup
@@ -5,10 +6,24 @@ infra/state-backup/
 *.tfstate
 *.tfstate.backup
 *.bak
+*.tfplan
 infra/terraform.tfvars
+
+# Kubernetes secrets
 k8s/secret.yaml
+
+# Local notes and captured values
 notes/
+
+# Generated AWS policy files
 security/*bucket-policy.json
 k8s/iam_policy.json
-*.tfplan
+app/iam_policy.json
+
+# Downloaded or duplicated source archive
+download/
+source/
+
+# Private keys / certificates
 *.pem
+*.key
